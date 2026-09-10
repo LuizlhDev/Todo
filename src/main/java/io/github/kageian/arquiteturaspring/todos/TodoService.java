@@ -11,12 +11,17 @@ import java.util.Objects;
 public class TodoService {
 
     private TodoRepository repository;
+    private TodoValidator validator;
 
-    public TodoService(TodoRepository repository) {
+    public TodoService(TodoRepository repository,
+                       TodoValidator validator) {
         this.repository = repository;
+        this.validator = validator;
+
     }
 
     public TodoEntity salvar(TodoEntity novoTodo) {
+        validator.validar(novoTodo);
         return repository.save(novoTodo);
 
     }
@@ -31,11 +36,15 @@ public class TodoService {
         return repository.findById(id).orElseThrow(() -> new RuntimeException("Id não encontrado..."));
     }
 
-    public List<TodoEntity> buscarTodos(TodoEntity todos){
+    public List<TodoEntity> buscarTodos(){
         return repository.findAll();
     }
 
     public void deletar(Integer id){
         repository.deleteById(id);
+    }
+
+    public void deletarTodos(){
+       repository.deleteAll();
     }
 }

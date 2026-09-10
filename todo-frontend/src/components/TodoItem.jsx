@@ -52,30 +52,32 @@ export default function TodoItem({ todo, onToggle, onDelete }) {
     .join(' ')
 
   return (
-    <li className={classes} onAnimationEnd={handleAnimationEnd}>
-      <button
-        className="pixel-checkbox"
-        aria-label="marcar como concluído"
-        onClick={handleToggle}
-      >
-        {todo.concluido ? '✓' : ''}
-      </button>
+    <li className={leaving ? 'todo-slot is-leaving' : 'todo-slot'}>
+      <div className={classes} onAnimationEnd={handleAnimationEnd}>
+        <button
+          className="pixel-checkbox"
+          aria-label="marcar como concluído"
+          onClick={handleToggle}
+        >
+          {todo.concluido ? '✓' : ''}
+        </button>
 
-      <span className="todo-sparkles" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </span>
+        <span className="todo-sparkles" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </span>
 
-      <span className="todo-texto">{todo.descricao}</span>
+        <span className="todo-texto">{todo.descricao}</span>
 
-      <button
-        className="pixel-btn pixel-btn-x"
-        aria-label="excluir tarefa"
-        onClick={handleDelete}
-      >
-        X
-      </button>
+        <button
+          className="pixel-btn pixel-btn-x"
+          aria-label="excluir tarefa"
+          onClick={handleDelete}
+        >
+          X
+        </button>
+      </div>
     </li>
   )
 }

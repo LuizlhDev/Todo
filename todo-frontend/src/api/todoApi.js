@@ -1,4 +1,3 @@
-
 const BASE_URL = '/todos'
 
 export async function listarTodos() {
@@ -13,7 +12,11 @@ export async function criarTodo(descricao) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ descricao, concluido: false }),
   })
-  if (!res.ok) throw new Error('Erro ao criar todo')
+  if (!res.ok) {
+    const erro = new Error('Erro ao criar todo')
+    erro.status = res.status
+    throw erro
+  }
   return res.json()
 }
 

@@ -7,33 +7,61 @@ import {
   atualizarTodo,
   deletarTodo,
 } from './api/todoApi.js'
+import { playCriar, playErro } from './utils/sounds.js'
 
 export default function App() {
   const [todos, setTodos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
-  const [expanding, setExpanding] = useState(false)
-  const skipExpand = useRef(true)
+  const [formError, setFormError] = useState(0)
+
+  const growRef = useRef(null)
+  const innerRef = useRef(null)
 
   useEffect(() => {
     carregar()
   }, [])
 
   useEffect(() => {
-    if (skipExpand.current) {
-      skipExpand.current = false
-      return
+    const growEl = growRef.current
+    const innerEl = innerRef.current
+    if (!growEl || !innerEl) return
+
+    let alvo = -1
+    let frame = null
+    let pronto = false
+
+    const aplicar = (animar) => {
+      const proxima = Math.round(innerEl.getBoundingClientRect().height)
+      if (proxima === alvo) return
+      alvo = proxima
+      growEl.style.transition = animar
+        ? 'height 0.32s cubic-bezier(0.22, 1, 0.36, 1)'
+        : 'none'
+      growEl.style.height = `${proxima}px`
     }
-    setExpanding(true)
-    const timer = window.setTimeout(() => setExpanding(false), 500)
-    return () => window.clearTimeout(timer)
-  }, [todos.length])
+
+    aplicar(false)
+    requestAnimationFrame(() => {
+      pronto = true
+    })
+
+    const observer = new ResizeObserver(() => {
+      if (frame) cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => aplicar(pronto))
+    })
+    observer.observe(innerEl)
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  }, [])
 
   async function carregar() {
     try {
       setCarregando(true)
       const dados = await listarTodos()
-      skipExpand.current = true
       setTodos(dados.map((t) => ({ ...t, _key: t.id })))
       setErro(null)
     } catch (e) {
@@ -44,6 +72,15 @@ export default function App() {
   }
 
   async function handleAdd(descricao) {
+    const jaExiste = todos.some(
+      (t) => t.descricao.trim().toLowerCase() === descricao.trim().toLowerCase(),
+    )
+    if (jaExiste) {
+      playErro()
+      setFormError((n) => n + 1)
+      return
+    }
+
     const idTemporario = Date.now()
     const todoTemporario = {
       id: idTemporario,
@@ -61,8 +98,13 @@ export default function App() {
           t.id === idTemporario ? { ...novo, _key: t._key } : t,
         ),
       )
+      playCriar()
     } catch (e) {
       setTodos((atual) => atual.filter((t) => t.id !== idTemporario))
+      if (e.status === 409) {
+        playErro()
+        setFormError((n) => n + 1)
+      }
     }
   }
 
@@ -95,30 +137,34 @@ export default function App() {
         ✦
       </span>
 
-      <div className={`console ${expanding ? 'is-expanding' : ''}`}>
-        <div className="console-topbar">
-          <span className="console-dot" />
-          <span className="console-dot" />
-          <span className="console-dot" />
+      <div className="console">
+        <div className="console-grow" ref={growRef}>
+          <div className="console-inner" ref={innerRef}>
+            <div className="console-topbar">
+              <span className="console-dot" />
+              <span className="console-dot" />
+              <span className="console-dot" />
+            </div>
+
+            <div className="console-title-wrap">
+              <h1 className="console-title">todo.exe</h1>
+              <span className="console-subtitle">Para o meu amor: gabriella!</span>
+            </div>
+
+            <TodoForm onAdd={handleAdd} errorSignal={formError} />
+
+            {carregando && <p className="empty-state">carregando...</p>}
+            {erro && <p className="erro-state">{erro}</p>}
+
+            {!carregando && !erro && (
+              <TodoList
+                todos={todos}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+              />
+            )}
+          </div>
         </div>
-
-        <div className="console-title-wrap">
-          <h1 className="console-title">todo.exe</h1>
-          <span className="console-subtitle">Para o meu amor: gabriella!</span>
-        </div>
-
-        <TodoForm onAdd={handleAdd} />
-
-        {carregando && <p className="empty-state">carregando...</p>}
-        {erro && <p className="erro-state">{erro}</p>}
-
-        {!carregando && !erro && (
-          <TodoList
-            todos={todos}
-            onToggle={handleToggle}
-            onDelete={handleDelete}
-          />
-        )}
       </div>
     </div>
   )

@@ -1,6 +1,8 @@
 package io.github.kageian.arquiteturaspring.todos;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -17,7 +19,14 @@ public class TodoController {
 
     @PostMapping
     public TodoEntity salvar(@RequestBody TodoEntity todo) {
-        return this.service.salvar(todo);
+        try{
+            return service.salvar(todo);
+
+        }catch (IllegalArgumentException e ){
+                var menssagemError = e.getMessage();
+                throw  new ResponseStatusException(HttpStatus.CONFLICT, menssagemError);
+        }
+
     }
 
 
@@ -27,16 +36,22 @@ public class TodoController {
     }
 
     @GetMapping("/{id}")
-    public TodoEntity buscarPorId(@PathVariable Integer id){
+    public TodoEntity buscarPorId(@PathVariable Integer id) {
         return service.buscarPorId(id);
     }
+
     @GetMapping
-    public List<TodoEntity> buscarTodos(TodoEntity todos){
-        return service.buscarTodos(todos);
+    public List<TodoEntity> buscarTodos() {
+        return service.buscarTodos();
     }
 
     @DeleteMapping("/{id}")
-    public void deletarPorId(@PathVariable Integer id){
+    public void deletarPorId(@PathVariable Integer id) {
         service.deletar(id);
+    }
+
+    @DeleteMapping
+    public void deletarTodos(){
+        service.deletarTodos();
     }
 }
